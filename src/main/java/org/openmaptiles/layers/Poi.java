@@ -54,6 +54,7 @@ import com.onthegomap.planetiler.reader.SimpleFeature;
 import com.onthegomap.planetiler.stats.Stats;
 import com.onthegomap.planetiler.util.Parse;
 import com.onthegomap.planetiler.util.Translations;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -154,7 +155,7 @@ public class Poi implements
   private int minzoom(String subclass, String mappingKey) {
     boolean lowZoom = ("station".equals(subclass) && "railway".equals(mappingKey)) ||
       "halt".equals(subclass) || "ferry_terminal".equals(subclass);
-    return lowZoom ? 12 : 14;
+    return lowZoom ? 10 : 13;
   }
 
   @Override
@@ -309,6 +310,18 @@ public class Poi implements
       // universities that are at least 10% of a tile may appear from Z10
       output.setMinPixelSizeBelowZoom(13, 80); // 80x80px is ~10% of a 256x256px tile
       minzoom = 10;
+    }
+    if (name != null && name.contains("道の駅")) {
+      name = Normalizer
+        .normalize(name, Normalizer.Form.NFKC)
+        .replace("道の駅", "")
+        .replace("駐車場", "")
+        .replaceAll("[;,・、「」].*", "")
+        .replaceAll("P$", "")
+        .trim();
+      tags.put("name", name);
+      subclass = "roadside_station";
+      minzoom = 8;
     }
 
     output.setBufferPixels(BUFFER_SIZE)

@@ -346,9 +346,11 @@ public class Place implements
 
     int minzoom = rank != null && rank == 1 ? 2 :
       rank != null && rank <= 8 ? Math.max(3, rank - 1) :
+      capital != null ? 5 :
+      placeType.ordinal() <= PlaceType.CITY.ordinal() ? 6 :
       placeType.ordinal() <= PlaceType.TOWN.ordinal() ? 7 :
       placeType.ordinal() <= PlaceType.VILLAGE.ordinal() ? 8 :
-      placeType.ordinal() <= PlaceType.SUBURB.ordinal() ? 11 : 14;
+      placeType.ordinal() <= PlaceType.SUBURB.ordinal() ? 11 : 13;
 
     var feature = features.point(LAYER_NAME).setBufferPixels(BUFFER_SIZE)
       .putAttrs(OmtLanguageUtils.getNames(element.source().tags(), translations))
@@ -359,7 +361,7 @@ public class Place implements
       .setPointLabelGridPixelSize(12, 128);
 
     if (rank == null) {
-      feature.setPointLabelGridLimit(LABEL_GRID_LIMITS);
+      // feature.setPointLabelGridLimit(LABEL_GRID_LIMITS);
     }
 
     if (capital != null) { // with Java 18, we can handle that with "case null", see https://openjdk.org/jeps/420)

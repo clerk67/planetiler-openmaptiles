@@ -55,6 +55,7 @@ import com.onthegomap.planetiler.stats.Stats;
 import com.onthegomap.planetiler.util.Parse;
 import com.onthegomap.planetiler.util.Translations;
 import com.onthegomap.planetiler.util.ZoomFunction;
+import java.text.Normalizer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -192,8 +193,34 @@ public class TransportationName implements
     if (value > 0) {
       HighwayClass cls = HighwayClass.from(value);
       if (cls != HighwayClass.UNKNOWN) {
+        String name = element.name();
         String subclass = FieldValues.SUBCLASS_JUNCTION;
         String ref = element.ref();
+
+        if ("junction".equals(subclass) && name != null) {
+          name = Normalizer
+            .normalize(element.name(), Normalizer.Form.NFKC)
+            .replaceAll("\\([^)]*\\)", "")
+            .replaceAll("[;,・、].*", "")
+            .replace("ジャンクション", "JCT")
+            .trim();
+
+          // remove trailing "IC" from transportation names
+          if (name.endsWith("SIC")) {
+            name = name.substring(0, name.length() - 3) + "スマート";
+          }
+          if (name.endsWith("IC")) {
+            name = name.substring(0, name.length() - 2);
+          }
+          if (name.endsWith("I.C")) {
+            name = name.substring(0, name.length() - 3);
+          }
+          if (name.endsWith("出入口")) {
+            name = name.substring(0, name.length() - 3);
+          }
+          // remove trailing slashes
+          name = name.replaceAll("/.*", "");
+        }
 
         features.point(LAYER_NAME)
           .setBufferPixels(BUFFER_SIZE)
@@ -203,8 +230,10 @@ public class TransportationName implements
           .setAttr(Fields.CLASS, highwayClass(cls.highwayValue, null, null, null))
           .setAttr(Fields.SUBCLASS, subclass)
           .setAttr(Fields.LAYER, nullIfLong(element.layer(), 0))
+          .setAttr("name", name)
+          .setAttr("name_length", name != null ? name.length() : null)
           .setSortKeyDescending(element.zOrder())
-          .setMinZoom(10);
+          .setMinZoom(7);
       }
     }
   }
@@ -243,9 +272,9 @@ public class TransportationName implements
     boolean isLink = Transportation.isLink(highway);
     String baseClass = highwayClass.replace("_construction", "");
 
-    int minzoom = FieldValues.CLASS_TRUNK.equals(baseClass) ? 8 :
-      FieldValues.CLASS_MOTORWAY.equals(baseClass) ? 6 :
-      isLink ? 13 : 12; // fallback - get from line minzoom, but floor at 12
+    int minzoom = FieldValues.CLASS_TRUNK.equals(baseClass) ? 6 :
+      FieldValues.CLASS_MOTORWAY.equals(baseClass) ? 4 :
+      isLink ? 11 : 10; // fallback - get from line minzoom, but floor at 12
 
     // inherit min zoom threshold from visible road, and ensure we never show a label on a road that's not visible yet.
     minzoom = Math.max(minzoom, transportation.getMinzoom(element, highwayClass));
