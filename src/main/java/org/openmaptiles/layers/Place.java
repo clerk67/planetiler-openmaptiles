@@ -361,7 +361,7 @@ public class Place implements
       .setPointLabelGridPixelSize(12, 128);
 
     if (rank == null) {
-      // feature.setPointLabelGridLimit(LABEL_GRID_LIMITS);
+      feature.setPointLabelGridLimit(LABEL_GRID_LIMITS);
     }
 
     if (capital != null) { // with Java 18, we can handle that with "case null", see https://openjdk.org/jeps/420)
